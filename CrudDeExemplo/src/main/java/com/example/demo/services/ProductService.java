@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import javax.persistence.EntityNotFoundException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
@@ -23,12 +22,14 @@ import com.example.demo.services.exceptions.ResourceNotFoundException;
 
 @Service
 public class ProductService {
-
-	@Autowired
-	private ProductRepository repository;
 	
-	@Autowired
+	private ProductRepository repository;
 	private CategoryRepository categoryRepository;
+	
+	public ProductService(ProductRepository repository, CategoryRepository categoryRepository) {
+        this.repository = repository;
+        this.categoryRepository = categoryRepository;
+    }
 
 	@Transactional(readOnly = true)
 	public Page<ProductDTO> findAllPaged(PageRequest pageRequest) {
@@ -75,16 +76,15 @@ public class ProductService {
 
 	}
 	
-	@SuppressWarnings("deprecation")
 	private void copyDtoToEntity(ProductDTO dto, Product entity) {
-		entity.setName(dto.getName());
-		entity.setDescription(dto.getDescription());
-		entity.setPrice(dto.getPrice());
-		entity.setImgUrl(dto.getImgUrl());
-		entity.setDate(dto.getDate());
+		entity.setName(dto.name());
+		entity.setDescription(dto.description());
+		entity.setPrice(dto.price());
+		entity.setImgUrl(dto.imgUrl());
+		entity.setDate(dto.date());
 		entity.getCategories().clear();
-		for (CategoryDTO catDto : dto.getCategories()) {
-			Category category = categoryRepository.getOne(catDto.getId());
+		for (CategoryDTO catDto : dto.categories()) {
+			Category category = categoryRepository.getReferenceById(catDto.id());
 			entity.getCategories().add(category);
 		}
 	}

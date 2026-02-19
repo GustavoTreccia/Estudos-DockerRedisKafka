@@ -4,7 +4,8 @@ import java.util.Optional;
 
 import javax.persistence.EntityNotFoundException;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
@@ -21,8 +22,11 @@ import com.example.demo.services.exceptions.ResourceNotFoundException;
 @Service
 public class CategoryService {
 
-	@Autowired
 	private CategoryRepository repository;
+	
+	public CategoryService(CategoryRepository repository){
+		this.repository = repository;
+	}
 
 	@Transactional(readOnly = true)
 	public Page<CategoryDTO> findAllPaged(PageRequest pageRequest) {
@@ -31,6 +35,7 @@ public class CategoryService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(value = "ordens", key = "#id")
 	public CategoryDTO findById(Long id) {
 		Optional<Category> obj = repository.findById(id);
 		Category entity = obj.orElseThrow(() -> new ResourceNotFoundException("Entidade não encontrada"));
@@ -38,18 +43,20 @@ public class CategoryService {
 	}
 
 	@Transactional
+	@CacheEvict(value = "ordens", key = "#id")
 	public CategoryDTO insert(CategoryDTO dto) {
 		Category entity = new Category();
-		entity.setName(dto.getName());
+		entity.setName(dto.name());
 		entity = repository.save(entity);
 		return new CategoryDTO(entity);
 	}
 
 	@Transactional
+	@CacheEvict(value = "ordens", key = "#id")
 	public CategoryDTO update(Long id, CategoryDTO dto) {
 		try {
 			Category entity = repository.getById(id);
-			entity.setName(dto.getName());
+			entity.setName(dto.name());
 			entity = repository.save(entity);
 			return new CategoryDTO(entity);
 
@@ -58,6 +65,7 @@ public class CategoryService {
 		}
 	}
 
+	@CacheEvict(value = "ordens", key = "#id")
 	public void delete(Long id) {
 		try {
 			repository.deleteById(id);
